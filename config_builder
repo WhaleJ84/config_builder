@@ -1,0 +1,45 @@
+#!/usr/bin/env sh
+#set -x
+
+report_error(){
+    script='config_builder'
+    error="$1"
+    actions="$2"
+    [ "$actions" ] && echo "$script: $actions: $error" || echo "$script: $error"
+    exit 0
+}
+
+check_dir(){
+    # does directory exist?
+    failure_case='input directory is invalid'
+    dir="$1"
+    absolute_dir=$(realpath -e $dir 2>&1)
+
+    [ "$(echo $absolute_dir | grep -e 'realpath:')" ] && error=$(echo "$absolute_dir" | cut -f3 -d':' | sed 's/^ //') && report_error "$error" "$failure_case"
+    [ ! -d "$absolute_dir" ] && report_error 'Not a directory' "$failure_case"
+
+    # does directory contain files?
+    [ ! "$(ls $absolute_dir)" ] && report_error 'Directory empty' "$failure_case"
+}
+
+check_file(){
+    file="$1"
+}
+
+check_params(){
+    if [ ! "$1" ] || [ ! "$2" ]; then
+        [ ! "$1" ] && report_error 'no build directory given'
+        [ ! "$2" ] && report_error 'no output file given'
+    else
+        check_dir "$1"
+        check_file "$2"
+    fi
+}
+
+read_dir(){
+    cat "$absolute_dir"/* > "$file"
+}
+
+check_params "$1" "$2"
+read_dir
+#set +x
